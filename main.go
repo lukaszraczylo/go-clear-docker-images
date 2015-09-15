@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"regexp"
+	"time"
 
 	"github.com/fsouza/go-dockerclient"
 )
@@ -10,6 +11,9 @@ import (
 var safeImages []string
 
 func main() {
+	var RemoveOlderThan time.Duration = 1209600 // time in seconds, default 2 weeks.
+	imagesWhitelist := []string{"postgres", "ubuntu", "golang"}
+
 	// Requires following ENV variables:
 	// DOCKER_HOST :
 	// DOCKER_TLS_VERIFY : 1|0
@@ -28,11 +32,21 @@ func main() {
 
 	fmt.Println("Checking images...")
 	imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
+	currentTime := time.Now().Unix()
 	for _, img := range imgs {
-		for _, rpt := range img.RepoTags {
-			if rpt == "<none>:<none>" {
-				fmt.Printf("Trying to remove image: %s (%+v)", img.ID, img.RepoTags)
-				client.RemoveImage(img.ID)
+		if float64(img.Created) < float64(currentTime)-(time.Second*RemoveOlderThan).Seconds() {
+			var toRemove = true
+			for _, rpt := range img.RepoTags {
+				for _, protected := range imagesWhitelist {
+					re, _ := regexp.Compile(protected)
+					if re.Match([]byte(rpt)) {
+						toRemove = false
+					}
+				}
+				if toRemove || rpt == "<none>:<none>" {
+					fmt.Printf("Trying to remove image: %s (%+v)\n", img.ID, img.RepoTags)
+					client.RemoveImage(img.ID)
+				}
 			}
 		}
 	}
