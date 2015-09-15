@@ -1,0 +1,1 @@
+# go-clear-docker-images
