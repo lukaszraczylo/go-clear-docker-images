@@ -22,4 +22,4 @@
         Whitelisted images, comma separated (default "postgres,ubuntu,golang")
 ```
 
-##### Check release for OSX binary ( if you don't want to compile it on your own )
+##### Latest release available [here](https://github.com/lukaszraczylo/go-clear-docker-images/releases/latest).
