@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"regexp"
 	"strings"
@@ -9,23 +10,30 @@ import (
 	"github.com/fsouza/go-dockerclient"
 )
 
-var safeImages []string
+type Params struct {
+	OlderThan int
+	Whitelist string
+	Preserve  int
+}
 
+// Requires following ENV variables:
+// DOCKER_HOST :
+// DOCKER_TLS_VERIFY : 1|0
+// DOCKER_CERT_PATH : `pwd` | /home/potato
 func main() {
+	var p Params
 
 	f := func(c rune) bool {
 		return c == ':'
 	}
 
-	var RemoveOlderThan time.Duration = 1209600 // time in seconds, default 2 weeks.
-	imagesWhitelist := []string{"postgres", "ubuntu", "golang"}
-	imagesToPreserve := 3
-	// imagesToPreserveCounter := 1
+	// var RemoveOlderThan time.Duration = 1209600 // time in seconds, default 2 weeks.
+	flag.IntVar(&p.OlderThan, "older-than", 1209600, "Removes images older than X seconds.")
+	flag.StringVar(&p.Whitelist, "whitelist", "postgres,ubuntu,golang", "Whitelisted images, comma separated")
+	flag.IntVar(&p.Preserve, "preserve", 3, "Numbers of images to preserve even if older than required")
+	flag.Parse()
 
-	// Requires following ENV variables:
-	// DOCKER_HOST :
-	// DOCKER_TLS_VERIFY : 1|0
-	// DOCKER_CERT_PATH : `pwd` | /home/potato
+	imagesWhiteList := strings.Split(p.Whitelist, ",")
 	client, _ := docker.NewClientFromEnv()
 	containers, _ := client.ListContainers(docker.ListContainersOptions{All: true})
 	fmt.Println("Checking containers...")
@@ -43,16 +51,16 @@ func main() {
 	currentTime := time.Now().Unix()
 	var imagesArray []string
 	for _, img := range imgs {
-		if float64(img.Created) < float64(currentTime)-(time.Second*RemoveOlderThan).Seconds() {
+		if float64(img.Created) < float64(currentTime)-(time.Second*time.Duration(p.OlderThan)).Seconds() {
 			var toRemove = true
 			for _, rpt := range img.RepoTags {
-				for _, protected := range imagesWhitelist {
+				for _, protected := range imagesWhiteList {
 					re, _ := regexp.Compile(protected)
 					if re.Match([]byte(rpt)) {
 						toRemove = false
 					} else {
 						imagesArray = append(imagesArray, strings.FieldsFunc(rpt, f)[0])
-						if strings.Count(strings.Join(imagesArray, " "), rpt) < imagesToPreserve {
+						if strings.Count(strings.Join(imagesArray, " "), rpt) < p.Preserve {
 							toRemove = false
 						}
 					}

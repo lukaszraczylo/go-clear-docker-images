@@ -10,4 +10,14 @@
     DOCKER_CERT_PATH : `pwd` | /home/potato
 ```
 
+### Usage
+```
+  -older-than int
+        Removes images older than X seconds. (default 1209600)
+  -preserve int
+        Numbers of images to preserve even if older than required (default 3)
+  -whitelist string
+        Whitelisted images, comma separated (default "postgres,ubuntu,golang")
+```
+
 ##### Check release for OSX binary ( if you don't want to compile it on your own )
