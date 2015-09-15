@@ -27,8 +27,7 @@ func main() {
 		return c == ':'
 	}
 
-	// var RemoveOlderThan time.Duration = 1209600 // time in seconds, default 2 weeks.
-	flag.IntVar(&p.OlderThan, "older-than", 1209600, "Removes images older than X seconds.")
+	flag.IntVar(&p.OlderThan, "older-than", 2*7*86400, "Removes images older than X seconds.")
 	flag.StringVar(&p.Whitelist, "whitelist", "postgres,ubuntu,golang", "Whitelisted images, comma separated")
 	flag.IntVar(&p.Preserve, "preserve", 3, "Numbers of images to preserve even if older than required")
 	flag.Parse()
