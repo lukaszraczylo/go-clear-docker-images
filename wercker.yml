@@ -1,0 +1,26 @@
+box: google/golang
+build:
+  steps:
+    # Sets the go workspace and places you package
+    # at the right place in the workspace tree
+    - setup-go-workspace:
+        package-dir: github.com/wercker/setup-go-workspace
+
+    - script:
+        name: install go dependencies
+        code: |
+          go get github.com/fsouza/go-dockerclient
+
+    - script:
+        name: build binary
+        code: |
+          make build
+
+deploy:
+    steps:
+        - github-create-release:
+            token: $GITHUB_TOKEN
+            tag: v0.5
+        - github-upload-asset:
+            token: $GITHUB_TOKEN
+            file: docker-images-cleanup.bin
