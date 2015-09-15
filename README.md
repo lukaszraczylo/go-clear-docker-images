@@ -2,6 +2,8 @@
 
 - Removes all stopped containers
 - Removes all untagged images ( if possible )
+- Preserves X of images tagged in the same way
+- Uses whitelist to ignore images which you want to keep at all cost
 
 ### Requires following ENV variables:
 ```
