@@ -11,10 +11,11 @@ import (
 )
 
 type Params struct {
-	OlderThan int
-	Whitelist string
-	Preserve  int
-	Debug     bool
+	ImagesOlderThan     int
+	ContainersOlderThan int
+	Whitelist           string
+	Preserve            int
+	Debug               bool
 }
 
 // Requires following ENV variables:
@@ -28,7 +29,8 @@ func main() {
 		return c == ':'
 	}
 
-	flag.IntVar(&p.OlderThan, "older-than", 2*7*86400, "Removes images older than X seconds.")
+	flag.IntVar(&p.ImagesOlderThan, "images-older-than", 2*7*86400, "Removes images older than X seconds.")
+	flag.IntVar(&p.ContainersOlderThan, "containers-older-than", 300, "Removes containers inactive for more than X seconds.")
 	flag.StringVar(&p.Whitelist, "whitelist", "postgres,ubuntu,golang", "Whitelisted images, comma separated")
 	flag.IntVar(&p.Preserve, "preserve", 3, "Numbers of images to preserve even if older than required")
 	flag.BoolVar(&p.Debug, "debug", false, "Print out what's going to be remove without touching stuff")
@@ -37,24 +39,26 @@ func main() {
 	imagesWhiteList := strings.Split(p.Whitelist, ",")
 	client, _ := docker.NewClientFromEnv()
 	containers, _ := client.ListContainers(docker.ListContainersOptions{All: true})
+	currentTime := time.Now().Unix()
 	fmt.Println("Checking containers...")
 	for _, cnt := range containers {
-		re, _ := regexp.Compile("Exited.*")
+		re, _ := regexp.Compile("(Exited|Created).*")
 		if re.Match([]byte(cnt.Status)) {
-			fmt.Printf("Removing container: %s (image: %s)\n", cnt.ID, cnt.Image)
-			opts := docker.RemoveContainerOptions{ID: cnt.ID}
-			if !p.Debug {
-				client.RemoveContainer(opts)
+			if float64(cnt.Created) < float64(currentTime)-(time.Second*time.Duration(p.ContainersOlderThan)).Seconds() {
+				fmt.Printf("Removing container: %s (image: %s)\n", cnt.ID, cnt.Image)
+				opts := docker.RemoveContainerOptions{ID: cnt.ID}
+				if !p.Debug {
+					client.RemoveContainer(opts)
+				}
 			}
 		}
 	}
 
 	fmt.Println("Checking images...")
 	imgs, _ := client.ListImages(docker.ListImagesOptions{All: false})
-	currentTime := time.Now().Unix()
 	var imagesArray []string
 	for _, img := range imgs {
-		if float64(img.Created) < float64(currentTime)-(time.Second*time.Duration(p.OlderThan)).Seconds() {
+		if float64(img.Created) < float64(currentTime)-(time.Second*time.Duration(p.ImagesOlderThan)).Seconds() {
 			var toRemove = true
 			for _, rpt := range img.RepoTags {
 				for _, protected := range imagesWhiteList {

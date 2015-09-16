@@ -15,9 +15,11 @@ DOCKER_CERT_PATH : `pwd` | /home/potato
 ### Usage
 ```
 Usage of ./docker-images-cleanup.bin:
+  -containers-older-than int
+        Removes containers inactive for more than X seconds. (default 300)
   -debug
         Print out what's going to be remove without touching stuff
-  -older-than int
+  -images-older-than int
         Removes images older than X seconds. (default 1209600)
   -preserve int
         Numbers of images to preserve even if older than required (default 3)
