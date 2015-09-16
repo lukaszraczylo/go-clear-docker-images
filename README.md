@@ -7,13 +7,16 @@
 
 ### Requires following ENV variables:
 ```
-    DOCKER_HOST : tcp://192.168.99.100:2376 | unix://var/run/docker.sock
-    DOCKER_TLS_VERIFY : 1|0
-    DOCKER_CERT_PATH : `pwd` | /home/potato
+DOCKER_HOST : tcp://192.168.99.100:2376 | unix://var/run/docker.sock
+DOCKER_TLS_VERIFY : 1|0
+DOCKER_CERT_PATH : `pwd` | /home/potato
 ```
 
 ### Usage
 ```
+Usage of ./docker-images-cleanup.bin:
+  -debug
+        Print out what's going to be remove without touching stuff
   -older-than int
         Removes images older than X seconds. (default 1209600)
   -preserve int

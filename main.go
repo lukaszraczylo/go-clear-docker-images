@@ -14,6 +14,7 @@ type Params struct {
 	OlderThan int
 	Whitelist string
 	Preserve  int
+	Debug     bool
 }
 
 // Requires following ENV variables:
@@ -30,6 +31,7 @@ func main() {
 	flag.IntVar(&p.OlderThan, "older-than", 2*7*86400, "Removes images older than X seconds.")
 	flag.StringVar(&p.Whitelist, "whitelist", "postgres,ubuntu,golang", "Whitelisted images, comma separated")
 	flag.IntVar(&p.Preserve, "preserve", 3, "Numbers of images to preserve even if older than required")
+	flag.BoolVar(&p.Debug, "debug", false, "Print out what's going to be remove without touching stuff")
 	flag.Parse()
 
 	imagesWhiteList := strings.Split(p.Whitelist, ",")
@@ -41,7 +43,9 @@ func main() {
 		if re.Match([]byte(cnt.Status)) {
 			fmt.Printf("Removing container: %s (image: %s)\n", cnt.ID, cnt.Image)
 			opts := docker.RemoveContainerOptions{ID: cnt.ID}
-			client.RemoveContainer(opts)
+			if !p.Debug {
+				client.RemoveContainer(opts)
+			}
 		}
 	}
 
@@ -66,7 +70,9 @@ func main() {
 				}
 				if toRemove || rpt == "<none>:<none>" {
 					fmt.Printf("Trying to remove image: %s (%+v)\n", img.ID, img.RepoTags)
-					client.RemoveImage(img.ID)
+					if !p.Debug {
+						client.RemoveImage(img.ID)
+					}
 				}
 			}
 		}
